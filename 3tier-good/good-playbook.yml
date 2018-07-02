@@ -1,0 +1,52 @@
+---
+- name: Repo Configuration
+  hosts: all
+  gather_facts: false # remove later! speeds up testing
+  become: true
+
+  tasks:
+  - name: enable repos
+    template:
+      src: ./templates/open_three-tier-app.repo.j2
+      dest: /etc/yum.repos.d/open_three-tier-app.repo
+      mode: 0644
+
+- name: Install HA Proxy
+  hosts: frontends
+  become: ture
+  roles:
+    - { role: geerlingguy.haproxy }
+
+- name: Install Tomcat
+  hosts: apps
+  become: true
+  roles:
+    - { role: hashbangcode.tomcat }
+
+  tasks:
+
+    - name: Create ansible Tomcat directory post Tomcat install
+      file:
+      path: /usr/share/tomcat/webapps/ROOT
+      state: directory
+
+    - name: copy static index.html to tomcat webapps/ansible/index.html
+      template:
+        src: ./templates/index.html.j2
+        dest: /usr/share/tomcat/webapps/ROOT/index.html
+        mode: 0644
+      notify:
+        - restart tomcat
+
+  handlers:
+    - name: restart tomcat
+      service:
+        name: tomcat6
+        state: restarted
+        
+- name: Deploy Postgres to AppDB servers
+  hosts: appdbs
+  become: true
+  roles:
+    - { role: geerlingguy.postgres }
+...
