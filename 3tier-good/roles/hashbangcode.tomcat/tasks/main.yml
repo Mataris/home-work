@@ -1,7 +1,0 @@
----
-- include: debian_tomcat.yml
-  when: ansible_os_family == "Debian"
-
-- include: redhat_tomcat.yml
-  when: ansible_os_family == "RedHat"
-
